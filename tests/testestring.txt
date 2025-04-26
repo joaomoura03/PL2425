@@ -1,0 +1,8 @@
+program ExemploString;
+var
+    nome: string;
+begin
+    writeln('Digite seu nome:');
+    readln(nome);
+    writeln('Olá, ', nome, '! Seja bem-vindo.');
+end.
