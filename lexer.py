@@ -1,39 +1,37 @@
 import ply.lex as lex
 import sys
 
-# Palavras-chave reservadas
-reserved = {
-    'program': 'PROGRAM',
-    'var': 'VAR',
-    'begin': 'BEGIN',
-    'end': 'END',
-    'function': 'FUNCTION',
-    'procedure': 'PROCEDURE',
-    'if': 'IF',
-    'then': 'THEN',
-    'else': 'ELSE',
-    'while': 'WHILE',
-    'do': 'DO',
-    'and': 'AND',
-    'or': 'OR',
-    'for': 'FOR',
-    'to': 'TO',
-    'downto': 'DOWNTO',
-    'writeln': 'WRITELN',
-    'readln': 'READLN',
-    'integer': 'INTEGER',
-    'boolean': 'BOOLEAN',
-    'string': 'STRING',
-    'true': 'TRUE',
-    'false': 'FALSE',
-    'div': 'DIV',
-    'mod': 'MOD',
-    'array': 'ARRAY',
-    'of': 'OF'
-}
-
 # Lista de tokens
 tokens = [
+    # Palavras reservadas primeiro para garantir precedência
+    'PROGRAM',
+    'VAR',
+    'BEGIN',
+    'END',
+    'FUNCTION',
+    'PROCEDURE',
+    'IF',
+    'THEN',
+    'ELSE',
+    'WHILE',
+    'DO',
+    'AND',
+    'OR',
+    'FOR',
+    'TO',
+    'DOWNTO',
+    'WRITELN',
+    'READLN',
+    'INTEGER',
+    'BOOLEAN',
+    'STRING',
+    'TRUE',
+    'FALSE',
+    'DIV',
+    'MOD',
+    'ARRAY',
+    'OF',
+    # Outros tokens
     'ID',
     'NUMBER',
     'STRING_LITERAL',
@@ -57,9 +55,134 @@ tokens = [
     'COMMA',
     'DOT',
     'DOTDOT'
-] + list(reserved.values())
+]
 
-# Regras para tokens simples
+# Expressões regulares para palavras reservadas (com precedência sobre ID)
+def t_PROGRAM(t):
+    r'program'
+    return t
+
+def t_VAR(t):
+    r'var'
+    return t
+
+def t_BEGIN(t):
+    r'begin'
+    return t
+
+def t_END(t):
+    r'end'
+    return t
+
+def t_FUNCTION(t):
+    r'function'
+    return t
+
+def t_PROCEDURE(t):
+    r'procedure'
+    return t
+
+def t_IF(t):
+    r'if'
+    return t
+
+def t_THEN(t):
+    r'then'
+    return t
+
+def t_ELSE(t):
+    r'else'
+    return t
+
+def t_WHILE(t):
+    r'while'
+    return t
+
+def t_DO(t):
+    r'do'
+    return t
+
+def t_AND(t):
+    r'and'
+    return t
+
+def t_OR(t):
+    r'or'
+    return t
+
+def t_FOR(t):
+    r'for'
+    return t
+
+def t_TO(t):
+    r'to'
+    return t
+
+def t_DOWNTO(t):
+    r'downto'
+    return t
+
+def t_WRITELN(t):
+    r'writeln'
+    return t
+
+def t_READLN(t):
+    r'readln'
+    return t
+
+def t_INTEGER(t):
+    r'integer'
+    return t
+
+def t_BOOLEAN(t):
+    r'boolean'
+    return t
+
+def t_STRING(t):
+    r'string'
+    return t
+
+def t_TRUE(t):
+    r'true'
+    return t
+
+def t_FALSE(t):
+    r'false'
+    return t
+
+def t_DIV(t):
+    r'div'
+    return t
+
+def t_MOD(t):
+    r'mod'
+    return t
+
+def t_ARRAY(t):
+    r'array'
+    return t
+
+def t_OF(t):
+    r'of'
+    return t
+
+# Regra para identificadores - deve ter precedência menor que as palavras reservadas
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    return t
+
+# Regras para outros tokens
+def t_NUMBER(t):
+    r'\d+'
+    t.value = int(t.value)  # Converte para inteiro
+    return t
+
+def t_STRING_LITERAL(t):
+    r'\'([^\\\']|\\.)*\''
+    t.value = t.value[1:-1]  # Remove as aspas simples
+    return t
+
+# Tokens simples
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
@@ -81,24 +204,8 @@ t_COMMA = r','
 t_DOT = r'\.'
 t_DOTDOT = r'\.\.'
 
-# Regras para tokens mais complexos
-def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = reserved.get(t.value.lower(), 'ID')  # Verifica se é uma palavra-chave
-    return t
-
-def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)  # Converte para inteiro
-    return t
-
-def t_STRING_LITERAL(t):
-    r'\'([^\\\']|\\.)*\''
-    t.value = t.value[1:-1]  # Remove as aspas simples
-    return t
-
 # Ignorar espaços e tabulações
-t_ignore = ' \t\n'
+t_ignore = ' \t'
 
 # Ignorar comentários de uma linha e multilinhas
 def t_COMMENT(t):
@@ -117,7 +224,6 @@ def t_error(t):
 
 # Construir o lexer
 lexer = lex.lex()
-
 
 if __name__ == "__main__":
     ficheiro_test = sys.argv[1]
