@@ -1,4 +1,5 @@
 import ply.lex as lex
+import re
 import sys
 
 # Lista de tokens
@@ -99,7 +100,7 @@ def t_WHILE(t):
     return t
 
 def t_DO(t):
-    r'do'
+    r'do\b'
     return t
 
 def t_AND(t):
@@ -205,7 +206,7 @@ t_DOT = r'\.'
 t_DOTDOT = r'\.\.'
 
 # Ignorar espaços e tabulações
-t_ignore = ' \t'
+t_ignore = ' \t\n'
 
 # Ignorar comentários de uma linha e multilinhas
 def t_COMMENT(t):
@@ -223,7 +224,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 # Construir o lexer
-lexer = lex.lex()
+lexer = lex.lex(reflags=re.IGNORECASE)
 
 if __name__ == "__main__":
     ficheiro_test = sys.argv[1]

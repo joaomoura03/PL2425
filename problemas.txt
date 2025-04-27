@@ -1,0 +1,8 @@
+1 - problema de strings como declaração e como string a ser escrita no terminal
+defenir string e string_literal sendo que o string_literal é as strings que devem ser impressas
+
+2 - problema com o downto que estava a ser reconhecido como do(do) e depois como wnto(id)
+colocar \b no fim da expressão regular do do para indicar que aquela expressão regular termina ali
+
+3- o pascal nao ser case sensitive
+colar a flag "reflags=re.IGNORECASE" no lexer
