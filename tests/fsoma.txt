@@ -1,4 +1,4 @@
 function Somar(A, B: Integer): Integer;
 begin
-  Somar := A + B;
+    Somar := A + B;
 end;

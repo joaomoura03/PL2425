@@ -1,0 +1,14 @@
+program MediaNotas;
+var
+    Nota1, Nota2, Nota3, Media: Real;
+begin
+    Write('Digite a primeira nota: ');
+    ReadLn(Nota1);
+    Write('Digite a segunda nota: ');
+    ReadLn(Nota2);
+    Write('Digite a terceira nota: ');
+    ReadLn(Nota3);
+    Media := (Nota1 + Nota2 + Nota3) / 3;
+    WriteLn('A média é: ', Media:0:2);
+    ReadLn;
+end.

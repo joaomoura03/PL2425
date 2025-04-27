@@ -1,8 +1,0 @@
-function Fatorial(N: Integer): LongInt;
-var
-  I: Integer;
-begin
-  Fatorial := 1;
-  for I := 2 to N do
-    Fatorial := Fatorial * I;
-end;

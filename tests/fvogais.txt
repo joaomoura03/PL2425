@@ -1,0 +1,13 @@
+function ContarVogais(Texto: String): Integer;
+var
+    I: Integer;
+    C: Char;
+begin
+    ContarVogais := 0;
+    for I := 1 to Length(Texto) do
+    begin
+        C := UpCase(Texto[I]);
+        if C in ['A', 'E', 'I', 'O', 'U'] then
+        Inc(ContarVogais);
+    end;
+end;

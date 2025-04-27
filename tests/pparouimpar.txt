@@ -1,0 +1,12 @@
+program ParOuImpar;
+var
+    Numero: Integer;
+begin
+    Write('Digite um número: ');
+    ReadLn(Numero);
+    if (Numero mod 2) = 0 then
+        WriteLn('O número é par.')
+    else
+        WriteLn('O número é ímpar.');
+    ReadLn;
+end.

@@ -1,0 +1,18 @@
+program MaiorDeTres;
+var
+    A, B, C, Maior: Integer;
+begin
+    Write('Digite o primeiro número: ');
+    ReadLn(A);
+    Write('Digite o segundo número: ');
+    ReadLn(B);
+    Write('Digite o terceiro número: ');
+    ReadLn(C);
+    Maior := A;
+    if B > Maior then
+        Maior := B;
+    if C > Maior then
+        Maior := C;
+    WriteLn('O maior número é: ', Maior);
+    ReadLn;
+end.
