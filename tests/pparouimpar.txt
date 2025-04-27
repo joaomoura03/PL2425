@@ -8,5 +8,4 @@ begin
         WriteLn('O número é par.')
     else
         WriteLn('O número é ímpar.');
-    ReadLn;
 end.

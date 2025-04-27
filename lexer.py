@@ -124,7 +124,7 @@ def t_DOWNTO(t):
     return t
 
 def t_WRITELN(t):
-    r'writeln'
+    r'writeln|write'
     return t
 
 def t_READLN(t):
