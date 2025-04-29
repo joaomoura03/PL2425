@@ -1,3 +1,5 @@
+program TestaContarVogais;
+
 function ContarVogais(Texto: String): Integer;
 var
     I: Integer;
@@ -8,6 +10,16 @@ begin
     begin
         C := UpCase(Texto[I]);
         if C in ['A', 'E', 'I', 'O', 'U'] then
-        Inc(ContarVogais);
+            Inc(ContarVogais);
     end;
 end;
+
+var
+  Frase: String;
+
+begin
+  writeln('Digite um texto:');
+  readln(Frase);
+
+  writeln('Número de vogais: ', ContarVogais(Frase));
+end.

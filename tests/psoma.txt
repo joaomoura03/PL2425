@@ -1,0 +1,16 @@
+program TestaSomar;
+
+function Somar(A, B: Integer): Integer;
+begin
+    Somar := A + B;
+end;
+
+var
+  X, Y: Integer;
+
+begin
+  writeln('Digite dois números inteiros:');
+  readln(X, Y);
+
+  writeln('A soma é: ', Somar(X, Y));
+end.

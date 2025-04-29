@@ -1,0 +1,13 @@
+program TestaEhPar;
+
+function EhPar(N: Integer): Boolean;
+begin
+    EhPar := (N mod 2) = 0;
+end;
+
+begin
+  if EhPar(10) then
+    writeln('10 é par')
+  else
+    writeln('10 é ímpar');
+end.

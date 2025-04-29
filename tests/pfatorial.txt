@@ -1,0 +1,20 @@
+program TestaFatorial;
+
+function Fatorial(N: Integer): LongInt;
+var
+    I: Integer;
+begin
+    Fatorial := 1;
+    for I := 2 to N do
+        Fatorial := Fatorial * I;
+end;
+
+var
+  num: Integer;
+
+begin
+  writeln('Digite um número inteiro positivo:');
+  readln(num);
+
+  writeln('Fatorial de ', num, ' é ', Fatorial(num));
+end.

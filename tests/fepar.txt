@@ -1,4 +1,0 @@
-function EhPar(N: Integer): Boolean;
-begin
-    EhPar := (N mod 2) = 0;
-end;
