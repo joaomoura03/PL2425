@@ -2,5 +2,5 @@ No lexer:
 - adicionar conceito de Real
 
 No parser:
-- Corrigir os loops
 - tratar de functions
+- corrigir if

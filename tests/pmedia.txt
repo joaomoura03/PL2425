@@ -1,6 +1,6 @@
 program MediaNotas;
 var
-    Nota1, Nota2, Nota3, Media: Real;
+    Nota1, Nota2, Nota3, Media: integer;
 begin
     Write('Digite a primeira nota: ');
     ReadLn(Nota1);
@@ -9,6 +9,5 @@ begin
     Write('Digite a terceira nota: ');
     ReadLn(Nota3);
     Media := (Nota1 + Nota2 + Nota3) / 3;
-    WriteLn('A média é: ', Media:0:2);
-    ReadLn;
+    WriteLn('A média é: ', Media);
 end.

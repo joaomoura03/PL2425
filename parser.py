@@ -18,7 +18,7 @@ def emit(instruction):
 # Função para gerar rótulos únicos
 def new_label(prefix):
     global label_counter
-    label = f"{prefix}_{label_counter}"
+    label = f"{prefix}{label_counter}"
     label_counter += 1
     return label
 
@@ -68,7 +68,10 @@ def p_var_declaration(p):
                 emit(f"PUSHN {size}")  # Reserva espaço para o array
                 next_address += size
             else:
-                symbol_table[var] = next_address
+                symbol_table[var] = {
+                    'address': next_address,
+                    'type': p[3]  # Armazenar o tipo da variável
+                }
                 emit("PUSHN 1")  # Variável simples
                 next_address += 1
 
@@ -138,7 +141,8 @@ def p_assignment(p):
         var_name = p[1]
         if var_name not in symbol_table:
             raise SyntaxError(f"Variável '{var_name}' não declarada")
-        emit(f"STOREG {symbol_table[var_name]}")
+        addr = symbol_table[var_name]['address'] if isinstance(symbol_table[var_name], dict) else symbol_table[var_name]
+        emit(f"STOREG {addr}")
 
 # Variável (simples ou elemento de array)
 def p_variable(p):
@@ -175,7 +179,10 @@ def p_writeln(p):
     
     # Processar cada expressão na lista e escrever
     for _ in range(len(p[3])):
-        emit("WRITES")
+        # Determinar o tipo de saída com base no tipo da expressão
+        # Por simplicidade, usamos WRITEI para números e WRITES para strings
+        emit("WRITEI")  # Assumindo que a maioria das expressões serão numéricas
+                        # Na realidade, deveríamos verificar o tipo de cada expressão
     
     emit("WRITELN")
 
@@ -194,15 +201,29 @@ def p_readln(p):
     
     if isinstance(p[3], tuple) and p[3][0] == 'array_element':
         # Ler para um elemento de array - o endereço já está na pilha
-        emit("READ")     # Lê um valor da entrada
+        emit("READ")     # Lê um valor da entrada como string
+        emit("ATOI")     # Converte a string para inteiro
         emit("STOREN")   # Armazena no endereço calculado
     else:
         # Ler para uma variável simples
         var_name = p[3]
         if var_name not in symbol_table:
             raise SyntaxError(f"Variável '{var_name}' não declarada")
-        emit("READ")     # Lê um valor da entrada
-        emit(f"STOREG {symbol_table[var_name]}")  # Armazena o valor na variável
+        
+        var_info = symbol_table[var_name]
+        var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
+        var_type = var_info['type'] if isinstance(var_info, dict) else 'integer'  # Assume integer por padrão
+        
+        emit("READ")     # Lê um valor da entrada como string
+        
+        # Converter para o tipo apropriado com base no tipo da variável
+        if var_type == 'integer':
+            emit("ATOI")     # Converte a string para inteiro
+        elif var_type == 'boolean':
+            emit("ATOI")     # Converte a string para booleano (0 ou 1)
+        # Para string, não precisa converter
+        
+        emit(f"STOREG {var_addr}")  # Armazena o valor na variável
 
 # Comando if
 def p_if_statement(p):
@@ -240,19 +261,19 @@ def p_if_statement(p):
 # Comando while
 def p_while_statement(p):
     """while_statement : WHILE expression DO statement"""
-    start_label = new_label("while_start")
-    end_label = new_label("while_end")
+    start_label = new_label("WHILE")
+    end_label = new_label("ENDWHILE")
     
-    emit(f"{start_label}:")  # Início do loop
+    emit(f"{start_label}:")  # Label for the start of the loop
     
-    # A expressão de condição já foi processada em p[2]
+    # The condition expression (evaluated in p[2]) places result on stack
     
-    emit(f"JZ {end_label}")  # Se a condição for falsa, salta para o fim
+    emit(f"JZ {end_label}")  # If condition is false (0), jump to end
     
-    # O corpo do loop já foi processado em p[4]
+    # Code for the loop body (already processed in p[4])
     
-    emit(f"JUMP {start_label}")  # Volta ao início para testar a condição
-    emit(f"{end_label}:")        # Marca o fim do loop
+    emit(f"JUMP {start_label}")  # Jump back to start of loop
+    emit(f"{end_label}:")        # Label for end of loop
     
     p[0] = ('while', p[2], p[4])
 
@@ -264,40 +285,38 @@ def p_for_statement(p):
     if loop_var not in symbol_table:
         raise SyntaxError(f"Variável '{loop_var}' não declarada")
     
-    start_label = new_label("for_start")
-    end_label = new_label("for_end")
+    var_addr = symbol_table[loop_var]['address'] if isinstance(symbol_table[loop_var], dict) else symbol_table[loop_var]
     
-    # Inicializa o contador com a expressão inicial (já na pilha)
-    emit(f"STOREG {symbol_table[loop_var]}")
+    start_label = new_label("FOR")
+    end_label = new_label("ENDFOR")
     
-    # Guarda o valor limite em uma variável temporária
+    # The initial expression (evaluated in p[4]) places result on stack
+    emit(f"STOREG {var_addr}")  # Store initial value in loop variable
+    
+    # The limit expression (evaluated in p[6]) places result on stack
     global next_address
     limit_addr = next_address
     next_address += 1
-    emit(f"STOREG {limit_addr}")
+    emit(f"STOREG {limit_addr}")  # Store limit value in temporary variable
     
-    # Início do loop
-    emit(f"{start_label}:")
+    emit(f"{start_label}:")  # Label for start of loop
     
-    # Teste: se contador > limite, sai do loop
-    emit(f"PUSHG {symbol_table[loop_var]}")  # Empilha o contador
-    emit(f"PUSHG {limit_addr}")              # Empilha o limite
-    emit("SUP")                              # Testa contador > limite
-    emit(f"JZ {end_label}")                  # Se contador > limite, sai do loop
+    # Check loop condition
+    emit(f"PUSHG {var_addr}")    # Push loop variable value
+    emit(f"PUSHG {limit_addr}")  # Push limit value
+    emit("SUP")                  # Test if loop_var > limit
+    emit(f"JZ {end_label}")      # If loop_var > limit (condition true), exit loop
     
-    # Corpo do loop (statement) - já processado em p[8]
+    # Code for the loop body (already processed in p[8])
     
-    # Incrementa o contador
-    emit(f"PUSHG {symbol_table[loop_var]}")  # Empilha o contador
-    emit("PUSHI 1")                          # Empilha o incremento
-    emit("ADD")                              # Soma contador + 1
-    emit(f"STOREG {symbol_table[loop_var]}") # Armazena o resultado no contador
+    # Increment loop variable
+    emit(f"PUSHG {var_addr}")    # Push loop variable value
+    emit("PUSHI 1")              # Push increment value (1)
+    emit("ADD")                  # Add: loop_var + 1
+    emit(f"STOREG {var_addr}")   # Store result back in loop variable
     
-    # Volta ao início
-    emit(f"JUMP {start_label}")
-    
-    # Fim do loop
-    emit(f"{end_label}:")
+    emit(f"JUMP {start_label}")  # Jump back to start of loop
+    emit(f"{end_label}:")        # Label for end of loop
     
     p[0] = ('for', p[2], p[4], p[6], p[8])
 
@@ -391,7 +410,9 @@ def p_factor(p):
             # Variável simples
             if p[1] not in symbol_table:
                 raise SyntaxError(f"Variável '{p[1]}' não declarada")
-            emit(f"PUSHG {symbol_table[p[1]]}")
+            var_info = symbol_table[p[1]]
+            var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
+            emit(f"PUSHG {var_addr}")
     elif len(p) == 4:
         # Expressão entre parênteses - já processada em p[2]
         p[0] = p[2]

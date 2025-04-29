@@ -6,3 +6,6 @@ colocar \b no fim da expressão regular do do para indicar que aquela expressão
 
 3- o pascal nao ser case sensitive
 colar a flag "reflags=re.IGNORECASE" no lexer
+
+4- problema com o read não estar a ler da forma correta. quando lia um int estava a guardar como string
+ver qual é o tipo da variavel para qual estamos a ler e colacar atoi no fim do read caso seja um int
