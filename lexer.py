@@ -26,6 +26,7 @@ tokens = [
     'INTEGER',
     'BOOLEAN',
     'STRING',
+    'REAL',
     'TRUE',
     'FALSE',
     'DIV',
@@ -141,6 +142,10 @@ def t_BOOLEAN(t):
 
 def t_STRING(t):
     r'string'
+    return t
+
+def t_REAL(t):
+    r'real'
     return t
 
 def t_TRUE(t):

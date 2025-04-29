@@ -5,6 +5,7 @@ Unused terminals:
     DOWNTO
     FUNCTION
     PROCEDURE
+    REAL
 
 Grammar
 
@@ -111,6 +112,7 @@ PROCEDURE            :
 PROGRAM              : 1
 RBRACKET             : 10 28
 READLN               : 32
+REAL                 : 
 RPAREN               : 29 32 59
 SEMICOLON            : 1 5 6 15
 STRING               : 13

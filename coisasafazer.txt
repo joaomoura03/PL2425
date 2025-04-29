@@ -4,3 +4,4 @@ No lexer:
 No parser:
 - tratar de functions
 - corrigir if
+- corrigir write

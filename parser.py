@@ -28,7 +28,7 @@ def new_label(prefix):
 def p_program(p):
     """program : PROGRAM ID SEMICOLON block DOT"""
     p[0] = ('program', p[2], p[4])
-    emit("STOP")  # Finaliza o programa
+    emit("STOP")
 
 # Bloco principal
 def p_block(p):
@@ -200,10 +200,9 @@ def p_readln(p):
     p[0] = ('readln', p[3])
     
     if isinstance(p[3], tuple) and p[3][0] == 'array_element':
-        # Ler para um elemento de array - o endereço já está na pilha
-        emit("READ")     # Lê um valor da entrada como string
-        emit("ATOI")     # Converte a string para inteiro
-        emit("STOREN")   # Armazena no endereço calculado
+        emit("READ")
+        emit("ATOI") # Converte a string para inteiro
+        emit("STOREN")
     else:
         # Ler para uma variável simples
         var_name = p[3]
@@ -212,7 +211,7 @@ def p_readln(p):
         
         var_info = symbol_table[var_name]
         var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
-        var_type = var_info['type'] if isinstance(var_info, dict) else 'integer'  # Assume integer por padrão
+        var_type = var_info['type'] if isinstance(var_info, dict) else 'integer'
         
         emit("READ")     # Lê um valor da entrada como string
         
