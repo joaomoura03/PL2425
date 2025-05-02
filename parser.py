@@ -22,6 +22,37 @@ def new_label(prefix):
     label_counter += 1
     return label
 
+# Função para determinar o tipo de uma expressão
+def get_expression_type(expr):
+    if isinstance(expr, int):
+        return 'integer'
+    elif isinstance(expr, float):
+        return 'real'
+    elif isinstance(expr, str):
+        if expr in symbol_table:
+            if isinstance(symbol_table[expr], dict):
+                return symbol_table[expr]['type']
+            else:
+                return 'integer'  # Assumindo inteiro por padrão
+        else:
+            return 'string'
+    elif isinstance(expr, tuple):
+        if expr[0] == 'array_element':
+            var_name = expr[1]
+            if var_name in symbol_table:
+                return symbol_table[var_name]['element_type']
+        elif expr[0] == 'binop':
+            op = expr[1]
+            # Operadores que produzem valores lógicos (boolean)
+            if op in ['=', '<>', '<', '<=', '>', '>=', 'and', 'or']:
+                return 'boolean'
+            # Operadores aritméticos para valores reais
+            elif op in ['/', '*', '+', '-'] and (get_expression_type(expr[2]) == 'real' or get_expression_type(expr[3]) == 'real'):
+                return 'real'
+            else:
+                return get_expression_type(expr[2])  # Assumir tipo do primeiro operando para outros operadores
+    return 'unknown'
+
 # Regras da gramática
 
 # Programa principal
@@ -96,6 +127,7 @@ def p_type(p):
     """type : INTEGER
             | BOOLEAN
             | STRING
+            | REAL
             | array_type"""
     p[0] = p[1]
 
@@ -177,12 +209,22 @@ def p_writeln(p):
     """writeln : WRITELN LPAREN expression_list RPAREN"""
     p[0] = ('writeln', p[3])
     
-    # Processar cada expressão na lista e escrever
-    for _ in range(len(p[3])):
-        # Determinar o tipo de saída com base no tipo da expressão
-        # Por simplicidade, usamos WRITEI para números e WRITES para strings
-        emit("WRITEI")  # Assumindo que a maioria das expressões serão numéricas
-                        # Na realidade, deveríamos verificar o tipo de cada expressão
+    # Processar cada expressão na lista
+    for expr in reversed(p[3]):  # Invertemos a ordem para processar da esquerda para a direita
+        expr_type = get_expression_type(expr)
+        
+        # Emitir a instrução de escrita adequada com base no tipo
+        if expr_type == 'integer' or expr_type == 'boolean':
+            emit("WRITEI")
+        elif expr_type == 'real':
+            emit("WRITEF")
+        elif expr_type == 'string':
+            emit("WRITES")
+        elif expr_type == 'char':
+            emit("WRITECHR")
+        else:
+            # Padrão para tipos desconhecidos
+            emit("WRITEI")
     
     emit("WRITELN")
 
@@ -218,6 +260,8 @@ def p_readln(p):
         # Converter para o tipo apropriado com base no tipo da variável
         if var_type == 'integer':
             emit("ATOI")     # Converte a string para inteiro
+        elif var_type == 'real':
+            emit("ATOF")     # Converte a string para real
         elif var_type == 'boolean':
             emit("ATOI")     # Converte a string para booleano (0 ou 1)
         # Para string, não precisa converter
@@ -332,19 +376,37 @@ def p_expression(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
+        
+        # Verificar se estamos comparando valores reais
+        left_type = get_expression_type(p[1])
+        right_type = get_expression_type(p[3])
+        using_real = (left_type == 'real' or right_type == 'real')
+        
         if p[2] == '=':
             emit("EQUAL")
         elif p[2] == '<>':
             emit("EQUAL")
             emit("NOT")
         elif p[2] == '<':
-            emit("INF")
+            if using_real:
+                emit("FINF")
+            else:
+                emit("INF")
         elif p[2] == '<=':
-            emit("INFEQ")
+            if using_real:
+                emit("FINFEQ")
+            else:
+                emit("INFEQ")
         elif p[2] == '>':
-            emit("SUP")
+            if using_real:
+                emit("FSUP")
+            else:
+                emit("SUP")
         elif p[2] == '>=':
-            emit("SUPEQ")
+            if using_real:
+                emit("FSUPEQ")
+            else:
+                emit("SUPEQ")
 
 def p_simple_expression(p):
     """simple_expression : term
@@ -355,10 +417,22 @@ def p_simple_expression(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
+        
+        # Verificar se estamos operando com valores reais
+        left_type = get_expression_type(p[1])
+        right_type = get_expression_type(p[3])
+        using_real = (left_type == 'real' or right_type == 'real')
+        
         if p[2] == '+':
-            emit("ADD")
+            if using_real:
+                emit("FADD")
+            else:
+                emit("ADD")
         elif p[2] == '-':
-            emit("SUB")
+            if using_real:
+                emit("FSUB")
+            else:
+                emit("SUB")
         elif p[2] == 'or':
             emit("OR")
 
@@ -373,10 +447,22 @@ def p_term(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
+        
+        # Verificar se estamos operando com valores reais
+        left_type = get_expression_type(p[1])
+        right_type = get_expression_type(p[3])
+        using_real = (left_type == 'real' or right_type == 'real')
+        
         if p[2] == '*':
-            emit("MUL")
+            if using_real:
+                emit("FMUL")
+            else:
+                emit("MUL")
         elif p[2] == '/':
-            emit("DIV")
+            if using_real:
+                emit("FDIV")
+            else:
+                emit("DIV")
         elif p[2] == 'div':
             emit("DIV")
         elif p[2] == 'mod':
@@ -395,16 +481,21 @@ def p_factor(p):
         if isinstance(p[1], int):
             # Número
             emit(f"PUSHI {p[1]}")
+            p[0] = p[1]  # Passar o valor para análise posterior de tipo
         elif isinstance(p.slice[1].value, str) and p.slice[1].type == "STRING_LITERAL":
             # String literal
             emit(f'PUSHS "{p[1]}"')
+            p[0] = p[1]  # Valor da string para análise posterior de tipo
         elif p.slice[1].type == "TRUE":
             emit("PUSHI 1")
+            p[0] = 1  # Valor booleano true
         elif p.slice[1].type == "FALSE":
             emit("PUSHI 0")
+            p[0] = 0  # Valor booleano false
         elif isinstance(p[1], tuple) and p[1][0] == 'array_element':
             # Elemento de array - endereço já está na pilha
             emit("LOADN")
+            p[0] = p[1]  # Passar referência para análise posterior
         elif isinstance(p[1], str):
             # Variável simples
             if p[1] not in symbol_table:
@@ -412,6 +503,7 @@ def p_factor(p):
             var_info = symbol_table[p[1]]
             var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
             emit(f"PUSHG {var_addr}")
+            p[0] = p[1]  # Passa o nome da variável para análise posterior
     elif len(p) == 4:
         # Expressão entre parênteses - já processada em p[2]
         p[0] = p[2]

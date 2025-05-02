@@ -1,7 +1,3 @@
-No lexer:
-- adicionar conceito de Real
-
 No parser:
 - tratar de functions
 - corrigir if
-- corrigir write

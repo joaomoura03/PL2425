@@ -1,6 +1,6 @@
 program MediaNotas;
 var
-    Nota1, Nota2, Nota3, Media: integer;
+    Nota1, Nota2, Nota3, Media: Integer;
 begin
     Write('Digite a primeira nota: ');
     ReadLn(Nota1);
