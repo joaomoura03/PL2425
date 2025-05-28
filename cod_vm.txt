@@ -1,0 +1,21 @@
+PUSHN 1
+PUSHS "Insere um número: "
+WRITES
+WRITELN
+READ
+ATOI
+STOREG 0
+PUSHG 0
+PUSHI 0
+SUP
+PUSHS "O número é positivo"
+WRITES
+WRITELN
+PUSHS "O número é zero ou negativo"
+WRITES
+WRITELN
+JZ else0
+JUMP endif1
+else0:
+endif1:
+STOP

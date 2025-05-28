@@ -1,0 +1,14 @@
+program ExemploSimples;
+
+var
+  numero: integer;
+
+begin
+  Write('Insere um número: ');
+  ReadLn(numero);
+
+  if numero > 0 then
+    WriteLn('O número é positivo')
+  else
+    WriteLn('O número é zero ou negativo');
+end.

@@ -1,6 +1,6 @@
 program ParOuImpar;
 var
-    Numero: Integer;
+    Numero: integer;
 begin
     Write('Digite um número: ');
     ReadLn(Numero);

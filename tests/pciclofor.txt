@@ -1,0 +1,10 @@
+program CicloForSimples;
+var
+  i: integer;
+begin
+  writeln('Contagem de 1 a 10:');
+  for i := 1 to 10 do
+  begin
+    writeln('Número: ', i);
+  end;
+end.

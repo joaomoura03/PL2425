@@ -1,0 +1,29 @@
+program TesteIfAninhado;
+var
+  nota: integer;
+begin
+  writeln('Digite sua nota (0-100):');
+  readln(nota);
+  
+  if nota >= 0 then
+  begin
+    if nota >= 90 then
+      writeln('Excelente!')
+    else
+    begin
+      if nota >= 70 then
+        writeln('Bom')
+      else
+      begin
+        if nota >= 50 then
+          writeln('Suficiente')
+        else
+          writeln('Insuficiente');
+      end;
+    end;
+  end
+  else
+    writeln('Nota inválida');
+    
+  writeln('Fim do programa');
+end.

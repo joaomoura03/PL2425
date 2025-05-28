@@ -1,6 +1,6 @@
 program MaiorDeTres;
 var
-    A, B, C, Maior: Integer;
+    A, B, C, Maior: integer;
 begin
     Write('Digite o primeiro número: ');
     ReadLn(A);

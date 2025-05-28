@@ -273,7 +273,7 @@ def p_if_statement(p):
     """if_statement : IF expression THEN statement
                     | IF expression THEN statement ELSE statement"""
     if len(p) == 5:
-        end_label = new_label("end_if")
+        end_label = new_label("endif")
         
         # Após a avaliação da expressão, decide se salta
         emit(f"JZ {end_label}")  # Se a expressão for falsa, salta para o fim
@@ -285,7 +285,7 @@ def p_if_statement(p):
         p[0] = ('if', p[2], p[4])
     else:
         else_label = new_label("else")
-        end_label = new_label("end_if")
+        end_label = new_label("endif")
         
         # Avalia expressão e decide
         emit(f"JZ {else_label}")  # Se a expressão for falsa, salta para o else
@@ -320,7 +320,7 @@ def p_while_statement(p):
     
     p[0] = ('while', p[2], p[4])
 
-# Comando for
+# Comando for - CORRIGIDO
 def p_for_statement(p):
     """for_statement : FOR ID ASSIGN expression TO expression DO statement"""
     loop_var = p[2]
@@ -333,27 +333,29 @@ def p_for_statement(p):
     start_label = new_label("FOR")
     end_label = new_label("ENDFOR")
     
-    # The initial expression (evaluated in p[4]) places result on stack
+    # Avaliar e armazenar o valor inicial (já na pilha depois de p[4])
     emit(f"STOREG {var_addr}")  # Store initial value in loop variable
     
-    # The limit expression (evaluated in p[6]) places result on stack
+    # Avaliar e armazenar o valor final numa variável temporária
     global next_address
     limit_addr = next_address
     next_address += 1
+    emit("PUSHN 1")  # Reservar espaço para a variável temporária
+    # O valor limite já está na pilha depois de p[6]
     emit(f"STOREG {limit_addr}")  # Store limit value in temporary variable
     
     emit(f"{start_label}:")  # Label for start of loop
     
-    # Check loop condition
+    # Verificar condição do loop: loop_var <= limit
     emit(f"PUSHG {var_addr}")    # Push loop variable value
-    emit(f"PUSHG {limit_addr}")  # Push limit value
+    emit(f"PUSHG {limit_addr}")  # Push limit value  
     emit("SUP")                  # Test if loop_var > limit
-    emit(f"JZ {end_label}")      # If loop_var > limit (condition true), exit loop
+    emit(f"JZ {end_label}")      # If loop_var > limit, exit loop
     
-    # Code for the loop body (already processed in p[8])
+    # O corpo do loop já foi processado em p[8]
     
-    # Increment loop variable
-    emit(f"PUSHG {var_addr}")    # Push loop variable value
+    # Incrementar variável do loop
+    emit(f"PUSHG {var_addr}")    # Push current loop variable value
     emit("PUSHI 1")              # Push increment value (1)
     emit("ADD")                  # Add: loop_var + 1
     emit(f"STOREG {var_addr}")   # Store result back in loop variable
@@ -529,5 +531,6 @@ if __name__ == "__main__":
         data = f.read()
     result = parser.parse(data)
     print("Parsing finalizado. Código VM gerado:")
-    for line in vm_code:
-        print(line)
+    with open("cod_vm.txt", "w") as out_file:
+        for line in vm_code:
+            out_file.write(line + "\n")
