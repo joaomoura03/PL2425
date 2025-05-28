@@ -288,11 +288,11 @@ def process_statement(stmt):
             # Início do loop
             emit(f"{start_label}:")
             
-            # Verificar condição: loop_var <= limit
+            # Verificar condição: loop_var <= limit (continuar se verdadeiro)
             emit(f"PUSHG {var_addr}")    # valor da variável de controle
             emit(f"PUSHG {limit_addr}")  # valor limite
-            emit("SUP")                  # loop_var > limit?
-            emit(f"JZ {end_label}")      # se sim, sair do loop
+            emit("INFEQ")                # loop_var <= limit?
+            emit(f"JZ {end_label}")      # se loop_var > limit (resultado falso), sair do loop
             
             # Executar corpo do loop
             process_statement(body)
@@ -560,7 +560,7 @@ if __name__ == "__main__":
     with open(ficheiro_test, 'r') as f:
         data = f.read()
     result = parser.parse(data)
-    print("Parsing finalizado. Código VM gerado:")
+    print("Parsing finalizado\nCódigo VM gerado")
     with open("cod_vm.txt", "w") as out_file:
         for line in vm_code:
             out_file.write(line + "\n")

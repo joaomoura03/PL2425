@@ -1,0 +1,15 @@
+program TabuadaFor;
+var
+    numero, i, resultado: integer;
+begin
+    writeln('=== TABUADA COM FOR ===');
+    write('Digite um número: ');
+    readln(numero);
+    writeln('Tabuada do ', numero, ':');
+  
+    for i := 1 to 10 do
+    begin
+        resultado := numero * i;
+        writeln(numero, ' x ', i, ' = ', resultado);
+    end;
+end.

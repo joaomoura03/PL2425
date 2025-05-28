@@ -12,3 +12,6 @@ ver qual é o tipo da variavel para qual estamos a ler e colacar atoi no fim do 
 
 5- problema ter o write certo para o tipo certo
 adicionei a função get_expresison_type para saber qual é o tipo que estamos a imprimir
+
+6- problema nos loops nao estava a lerv bem a condição
+alterar a condição para que quando seja <= dê INFEQ

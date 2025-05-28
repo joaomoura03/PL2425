@@ -1,0 +1,51 @@
+program AvaliacaoNotas;
+var
+    nota1, nota2, nota3, media: real;
+    nome: string;
+begin
+    writeln('=== SISTEMA DE AVALIAÇÃO COM IFs ANINHADOS ===');
+    write('Digite o nome do aluno: ');
+    readln(nome);
+    write('Digite a primeira nota: ');
+    readln(nota1);
+    write('Digite a segunda nota: ');
+    readln(nota2);
+    write('Digite a terceira nota: ');
+    readln(nota3);
+  
+    media := (nota1 + nota2 + nota3) / 3;
+  
+    writeln;
+    writeln('Aluno: ', nome);
+    writeln('Média: ', media:0:2);
+  
+    if media >= 7.0 then
+    begin
+        if media >= 9.0 then
+        begin
+            if media >= 9.5 then
+                writeln('Situação: EXCELENTE - Parabéns!');
+            else
+                writeln('Situação: MUITO BOM - Ótimo desempenho!');
+        end
+        else
+            writeln('Situação: APROVADO - Bom trabalho!');
+    end
+    else
+    begin
+        if media >= 5.0 then
+        begin
+            if media >= 6.0 then
+                writeln('Situação: RECUPERAÇÃO - Precisa melhorar um pouco.');
+            else
+                writeln('Situação: RECUPERAÇÃO - Estude mais para a próxima.');
+        end
+        else
+        begin
+            if media >= 3.0 then
+                writeln('Situação: REPROVADO - Procure ajuda dos professores.');
+            else
+                writeln('Situação: REPROVADO - Precisa de muito mais estudo.');
+        end;
+    end;
+end.
