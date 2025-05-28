@@ -53,18 +53,282 @@ def get_expression_type(expr):
                 return get_expression_type(expr[2])  # Assumir tipo do primeiro operando para outros operadores
     return 'unknown'
 
-# Regras da gramática
+# Função para processar expressões e gerar código na ordem correta
+def process_expression(expr):
+    if isinstance(expr, int):
+        emit(f"PUSHI {expr}")
+    elif isinstance(expr, float):
+        emit(f"PUSHF {expr}")
+    elif isinstance(expr, str):
+        if expr in symbol_table:
+            var_info = symbol_table[expr]
+            var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
+            emit(f"PUSHG {var_addr}")
+        else:
+            emit(f'PUSHS "{expr}"')
+    elif isinstance(expr, tuple):
+        if expr[0] == 'array_element':
+            var_name = expr[1]
+            index_expr = expr[2]
+            
+            # Processar a expressão do índice
+            process_expression(index_expr)
+            
+            # Calcular o endereço do elemento
+            entry = symbol_table[var_name]
+            base_address = entry['address']
+            lower_bound = entry['lower']
+            
+            emit(f"PUSHI {lower_bound}")
+            emit("SUB")  # índice - lower_bound
+            emit(f"PUSHI {base_address}")
+            emit("ADD")  # base + (índice - lower_bound)
+            emit("LOADN")  # Carrega o valor do endereço calculado
+            
+        elif expr[0] == 'binop':
+            op = expr[1]
+            left = expr[2]
+            right = expr[3]
+            
+            # Processar operandos
+            process_expression(left)
+            process_expression(right)
+            
+            # Gerar código para operação
+            left_type = get_expression_type(left)
+            right_type = get_expression_type(right)
+            using_real = (left_type == 'real' or right_type == 'real')
+            
+            if op == '+':
+                emit("FADD" if using_real else "ADD")
+            elif op == '-':
+                emit("FSUB" if using_real else "SUB")
+            elif op == '*':
+                emit("FMUL" if using_real else "MUL")
+            elif op == '/':
+                emit("FDIV" if using_real else "DIV")
+            elif op == 'div':
+                emit("DIV")
+            elif op == 'mod':
+                emit("MOD")
+            elif op == '=':
+                emit("EQUAL")
+            elif op == '<>':
+                emit("EQUAL")
+                emit("NOT")
+            elif op == '<':
+                emit("FINF" if using_real else "INF")
+            elif op == '<=':
+                emit("FINFEQ" if using_real else "INFEQ")
+            elif op == '>':
+                emit("FSUP" if using_real else "SUP")
+            elif op == '>=':
+                emit("FSUPEQ" if using_real else "SUPEQ")
+            elif op == 'and':
+                emit("AND")
+            elif op == 'or':
+                emit("OR")
+
+# Função para processar statements na ordem correta
+def process_statement(stmt):
+    if stmt is None:
+        return
+        
+    if isinstance(stmt, tuple):
+        if stmt[0] == 'assignment':
+            var = stmt[1]
+            expr = stmt[2]
+            
+            # Processar a expressão primeiro
+            process_expression(expr)
+            
+            # Armazenar o resultado
+            if isinstance(var, tuple) and var[0] == 'array_element':
+                var_name = var[1]
+                index_expr = var[2]
+                
+                # Calcular endereço do elemento do array
+                process_expression(index_expr)
+                entry = symbol_table[var_name]
+                base_address = entry['address']
+                lower_bound = entry['lower']
+                
+                emit(f"PUSHI {lower_bound}")
+                emit("SUB")
+                emit(f"PUSHI {base_address}")
+                emit("ADD")
+                emit("STOREN")
+            else:
+                if var not in symbol_table:
+                    raise SyntaxError(f"Variável '{var}' não declarada")
+                var_info = symbol_table[var]
+                addr = var_info['address'] if isinstance(var_info, dict) else var_info
+                emit(f"STOREG {addr}")
+                
+        elif stmt[0] == 'writeln':
+            expr_list = stmt[1]
+            for expr in expr_list:
+                process_expression(expr)
+                expr_type = get_expression_type(expr)
+                
+                if expr_type == 'integer' or expr_type == 'boolean':
+                    emit("WRITEI")
+                elif expr_type == 'real':
+                    emit("WRITEF")
+                elif expr_type == 'string':
+                    emit("WRITES")
+                else:
+                    emit("WRITEI")
+            emit("WRITELN")
+            
+        elif stmt[0] == 'readln':
+            var = stmt[1]
+            emit("READ")
+            
+            if isinstance(var, tuple) and var[0] == 'array_element':
+                emit("ATOI")
+                var_name = var[1]
+                index_expr = var[2]
+                
+                # Calcular endereço do elemento
+                process_expression(index_expr)
+                entry = symbol_table[var_name]
+                base_address = entry['address']
+                lower_bound = entry['lower']
+                
+                emit(f"PUSHI {lower_bound}")
+                emit("SUB")
+                emit(f"PUSHI {base_address}")
+                emit("ADD")
+                emit("STOREN")
+            else:
+                if var not in symbol_table:
+                    raise SyntaxError(f"Variável '{var}' não declarada")
+                
+                var_info = symbol_table[var]
+                var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
+                var_type = var_info['type'] if isinstance(var_info, dict) else 'integer'
+                
+                if var_type == 'integer':
+                    emit("ATOI")
+                elif var_type == 'real':
+                    emit("ATOF")
+                elif var_type == 'boolean':
+                    emit("ATOI")
+                
+                emit(f"STOREG {var_addr}")
+                
+        elif stmt[0] == 'if':
+            condition = stmt[1]
+            then_stmt = stmt[2]
+            else_stmt = stmt[3] if len(stmt) > 3 else None
+            
+            # Processar condição
+            process_expression(condition)
+            
+            if else_stmt:
+                else_label = new_label("else")
+                end_label = new_label("endif")
+                
+                emit(f"JZ {else_label}")
+                process_statement(then_stmt)
+                emit(f"JUMP {end_label}")
+                emit(f"{else_label}:")
+                process_statement(else_stmt)
+                emit(f"{end_label}:")
+            else:
+                end_label = new_label("endif")
+                emit(f"JZ {end_label}")
+                process_statement(then_stmt)
+                emit(f"{end_label}:")
+                
+        elif stmt[0] == 'while':
+            condition = stmt[1]
+            body = stmt[2]
+            
+            start_label = new_label("while")
+            end_label = new_label("endwhile")
+            
+            emit(f"{start_label}:")
+            process_expression(condition)
+            emit(f"JZ {end_label}")
+            process_statement(body)
+            emit(f"JUMP {start_label}")
+            emit(f"{end_label}:")
+            
+        elif stmt[0] == 'for':
+            loop_var = stmt[1]
+            start_expr = stmt[2]
+            end_expr = stmt[3]
+            body = stmt[4]
+            
+            if loop_var not in symbol_table:
+                raise SyntaxError(f"Variável '{loop_var}' não declarada")
+            
+            var_info = symbol_table[loop_var]
+            var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
+            
+            # Gerar rótulos
+            start_label = new_label("for")
+            end_label = new_label("endfor")
+            
+            # Processar valor inicial e armazenar na variável de controle
+            process_expression(start_expr)
+            emit(f"STOREG {var_addr}")
+            
+            # Processar valor final e armazenar em endereço temporário
+            global next_address
+            limit_addr = next_address
+            next_address += 1
+            emit("PUSHN 1")  # Reservar espaço para o limite
+            
+            process_expression(end_expr)
+            emit(f"STOREG {limit_addr}")
+            
+            # Início do loop
+            emit(f"{start_label}:")
+            
+            # Verificar condição: loop_var <= limit
+            emit(f"PUSHG {var_addr}")    # valor da variável de controle
+            emit(f"PUSHG {limit_addr}")  # valor limite
+            emit("SUP")                  # loop_var > limit?
+            emit(f"JZ {end_label}")      # se sim, sair do loop
+            
+            # Executar corpo do loop
+            process_statement(body)
+            
+            # Incrementar variável de controle
+            emit(f"PUSHG {var_addr}")
+            emit("PUSHI 1")
+            emit("ADD")
+            emit(f"STOREG {var_addr}")
+            
+            # Voltar ao início
+            emit(f"JUMP {start_label}")
+            emit(f"{end_label}:")
+            
+        elif stmt[0] == 'compound':
+            stmt_list = stmt[1]
+            for s in stmt_list:
+                process_statement(s)
+    elif isinstance(stmt, list):
+        for s in stmt:
+            process_statement(s)
 
 # Programa principal
 def p_program(p):
     """program : PROGRAM ID SEMICOLON block DOT"""
     p[0] = ('program', p[2], p[4])
-    emit("STOP")
 
-# Bloco principal
+# Bloco principal - CORRIGIDO para processar na ordem certa
 def p_block(p):
     """block : declarations BEGIN statements END"""
     p[0] = ('block', p[3])
+    # Processar as declarações já foi feito durante a análise
+    # Agora processar os statements na ordem correta
+    for stmt in p[3]:
+        process_statement(stmt)
+    emit("STOP")
 
 # Declarações de variáveis
 def p_declarations(p):
@@ -157,26 +421,12 @@ def p_compound_statement(p):
     """compound_statement : BEGIN statements END"""
     p[0] = ('compound', p[2])
 
-# Atribuição
+# Atribuição - SEM gerar código aqui
 def p_assignment(p):
     """assignment : variable ASSIGN expression"""
     p[0] = ('assignment', p[1], p[3])
-    
-    # Verificar se é uma atribuição a um elemento de array
-    if isinstance(p[1], tuple) and p[1][0] == 'array_element':
-        var_name = p[1][1]
-        # O valor está no topo da pilha
-        # O endereço do elemento do array já está calculado na pilha
-        emit("STOREN")
-    else:
-        # Atribuição a variável simples
-        var_name = p[1]
-        if var_name not in symbol_table:
-            raise SyntaxError(f"Variável '{var_name}' não declarada")
-        addr = symbol_table[var_name]['address'] if isinstance(symbol_table[var_name], dict) else symbol_table[var_name]
-        emit(f"STOREG {addr}")
 
-# Variável (simples ou elemento de array)
+# Variável (simples ou elemento de array) - SEM gerar código aqui
 def p_variable(p):
     """variable : ID
                 | ID LBRACKET expression RBRACKET"""
@@ -192,41 +442,12 @@ def p_variable(p):
         if not isinstance(entry, dict) or entry.get('type') != 'array':
             raise SyntaxError(f"'{var_name}' não é um array")
         
-        base_address = entry['address']
-        lower_bound = entry['lower']
-        
-        # Calcula o endereço do elemento: base + (índice - lower_bound)
-        # A expressão do índice já está na pilha
-        emit(f"PUSHI {lower_bound}")
-        emit("SUB")  # índice - lower_bound
-        emit(f"PUSHI {base_address}")
-        emit("ADD")  # base + (índice - lower_bound)
-        
-        p[0] = ('array_element', var_name)
+        p[0] = ('array_element', var_name, p[3])
 
-# Comando writeln
+# Comando writeln - SEM gerar código aqui
 def p_writeln(p):
     """writeln : WRITELN LPAREN expression_list RPAREN"""
     p[0] = ('writeln', p[3])
-    
-    # Processar cada expressão na lista
-    for expr in reversed(p[3]):  # Invertemos a ordem para processar da esquerda para a direita
-        expr_type = get_expression_type(expr)
-        
-        # Emitir a instrução de escrita adequada com base no tipo
-        if expr_type == 'integer' or expr_type == 'boolean':
-            emit("WRITEI")
-        elif expr_type == 'real':
-            emit("WRITEF")
-        elif expr_type == 'string':
-            emit("WRITES")
-        elif expr_type == 'char':
-            emit("WRITECHR")
-        else:
-            # Padrão para tipos desconhecidos
-            emit("WRITEI")
-    
-    emit("WRITELN")
 
 def p_expression_list(p):
     """expression_list : expression
@@ -236,136 +457,31 @@ def p_expression_list(p):
     else:
         p[0] = [p[1]] + p[3]
 
-# Comando readln
+# Comando readln - SEM gerar código aqui
 def p_readln(p):
     """readln : READLN LPAREN variable RPAREN"""
     p[0] = ('readln', p[3])
-    
-    if isinstance(p[3], tuple) and p[3][0] == 'array_element':
-        emit("READ")
-        emit("ATOI") # Converte a string para inteiro
-        emit("STOREN")
-    else:
-        # Ler para uma variável simples
-        var_name = p[3]
-        if var_name not in symbol_table:
-            raise SyntaxError(f"Variável '{var_name}' não declarada")
-        
-        var_info = symbol_table[var_name]
-        var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
-        var_type = var_info['type'] if isinstance(var_info, dict) else 'integer'
-        
-        emit("READ")     # Lê um valor da entrada como string
-        
-        # Converter para o tipo apropriado com base no tipo da variável
-        if var_type == 'integer':
-            emit("ATOI")     # Converte a string para inteiro
-        elif var_type == 'real':
-            emit("ATOF")     # Converte a string para real
-        elif var_type == 'boolean':
-            emit("ATOI")     # Converte a string para booleano (0 ou 1)
-        # Para string, não precisa converter
-        
-        emit(f"STOREG {var_addr}")  # Armazena o valor na variável
 
-# Comando if
+# Comando if - SEM gerar código aqui
 def p_if_statement(p):
     """if_statement : IF expression THEN statement
                     | IF expression THEN statement ELSE statement"""
     if len(p) == 5:
-        end_label = new_label("endif")
-        
-        # Após a avaliação da expressão, decide se salta
-        emit(f"JZ {end_label}")  # Se a expressão for falsa, salta para o fim
-        
-        # Aqui estaria o código do THEN (já processado)
-        
-        emit(f"{end_label}:")  # Marca o fim do if
-        
         p[0] = ('if', p[2], p[4])
     else:
-        else_label = new_label("else")
-        end_label = new_label("endif")
-        
-        # Avalia expressão e decide
-        emit(f"JZ {else_label}")  # Se a expressão for falsa, salta para o else
-        
-        # Aqui estaria o código do THEN (já processado)
-        
-        emit(f"JUMP {end_label}")  # Após executar o then, salta o else
-        emit(f"{else_label}:")     # Marca o início do else
-        
-        # Aqui estaria o código do ELSE (já processado)
-        
-        emit(f"{end_label}:")      # Marca o fim do if-else
-        
         p[0] = ('if', p[2], p[4], p[6])
 
-# Comando while
+# Comando while - SEM gerar código aqui
 def p_while_statement(p):
     """while_statement : WHILE expression DO statement"""
-    start_label = new_label("WHILE")
-    end_label = new_label("ENDWHILE")
-    
-    emit(f"{start_label}:")  # Label for the start of the loop
-    
-    # The condition expression (evaluated in p[2]) places result on stack
-    
-    emit(f"JZ {end_label}")  # If condition is false (0), jump to end
-    
-    # Code for the loop body (already processed in p[4])
-    
-    emit(f"JUMP {start_label}")  # Jump back to start of loop
-    emit(f"{end_label}:")        # Label for end of loop
-    
     p[0] = ('while', p[2], p[4])
 
-# Comando for - CORRIGIDO
+# Comando for - SEM gerar código aqui
 def p_for_statement(p):
     """for_statement : FOR ID ASSIGN expression TO expression DO statement"""
-    loop_var = p[2]
-    
-    if loop_var not in symbol_table:
-        raise SyntaxError(f"Variável '{loop_var}' não declarada")
-    
-    var_addr = symbol_table[loop_var]['address'] if isinstance(symbol_table[loop_var], dict) else symbol_table[loop_var]
-    
-    start_label = new_label("FOR")
-    end_label = new_label("ENDFOR")
-    
-    # Avaliar e armazenar o valor inicial (já na pilha depois de p[4])
-    emit(f"STOREG {var_addr}")  # Store initial value in loop variable
-    
-    # Avaliar e armazenar o valor final numa variável temporária
-    global next_address
-    limit_addr = next_address
-    next_address += 1
-    emit("PUSHN 1")  # Reservar espaço para a variável temporária
-    # O valor limite já está na pilha depois de p[6]
-    emit(f"STOREG {limit_addr}")  # Store limit value in temporary variable
-    
-    emit(f"{start_label}:")  # Label for start of loop
-    
-    # Verificar condição do loop: loop_var <= limit
-    emit(f"PUSHG {var_addr}")    # Push loop variable value
-    emit(f"PUSHG {limit_addr}")  # Push limit value  
-    emit("SUP")                  # Test if loop_var > limit
-    emit(f"JZ {end_label}")      # If loop_var > limit, exit loop
-    
-    # O corpo do loop já foi processado em p[8]
-    
-    # Incrementar variável do loop
-    emit(f"PUSHG {var_addr}")    # Push current loop variable value
-    emit("PUSHI 1")              # Push increment value (1)
-    emit("ADD")                  # Add: loop_var + 1
-    emit(f"STOREG {var_addr}")   # Store result back in loop variable
-    
-    emit(f"JUMP {start_label}")  # Jump back to start of loop
-    emit(f"{end_label}:")        # Label for end of loop
-    
     p[0] = ('for', p[2], p[4], p[6], p[8])
 
-# Expressões
+# Expressões - SEM gerar código aqui
 def p_expression(p):
     """expression : simple_expression
                   | simple_expression EQUAL simple_expression
@@ -378,37 +494,6 @@ def p_expression(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
-        
-        # Verificar se estamos comparando valores reais
-        left_type = get_expression_type(p[1])
-        right_type = get_expression_type(p[3])
-        using_real = (left_type == 'real' or right_type == 'real')
-        
-        if p[2] == '=':
-            emit("EQUAL")
-        elif p[2] == '<>':
-            emit("EQUAL")
-            emit("NOT")
-        elif p[2] == '<':
-            if using_real:
-                emit("FINF")
-            else:
-                emit("INF")
-        elif p[2] == '<=':
-            if using_real:
-                emit("FINFEQ")
-            else:
-                emit("INFEQ")
-        elif p[2] == '>':
-            if using_real:
-                emit("FSUP")
-            else:
-                emit("SUP")
-        elif p[2] == '>=':
-            if using_real:
-                emit("FSUPEQ")
-            else:
-                emit("SUPEQ")
 
 def p_simple_expression(p):
     """simple_expression : term
@@ -419,24 +504,6 @@ def p_simple_expression(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
-        
-        # Verificar se estamos operando com valores reais
-        left_type = get_expression_type(p[1])
-        right_type = get_expression_type(p[3])
-        using_real = (left_type == 'real' or right_type == 'real')
-        
-        if p[2] == '+':
-            if using_real:
-                emit("FADD")
-            else:
-                emit("ADD")
-        elif p[2] == '-':
-            if using_real:
-                emit("FSUB")
-            else:
-                emit("SUB")
-        elif p[2] == 'or':
-            emit("OR")
 
 def p_term(p):
     """term : factor
@@ -449,28 +516,6 @@ def p_term(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
-        
-        # Verificar se estamos operando com valores reais
-        left_type = get_expression_type(p[1])
-        right_type = get_expression_type(p[3])
-        using_real = (left_type == 'real' or right_type == 'real')
-        
-        if p[2] == '*':
-            if using_real:
-                emit("FMUL")
-            else:
-                emit("MUL")
-        elif p[2] == '/':
-            if using_real:
-                emit("FDIV")
-            else:
-                emit("DIV")
-        elif p[2] == 'div':
-            emit("DIV")
-        elif p[2] == 'mod':
-            emit("MOD")
-        elif p[2] == 'and':
-            emit("AND")
 
 def p_factor(p):
     """factor : variable
@@ -481,33 +526,18 @@ def p_factor(p):
               | LPAREN expression RPAREN"""
     if len(p) == 2:
         if isinstance(p[1], int):
-            # Número
-            emit(f"PUSHI {p[1]}")
-            p[0] = p[1]  # Passar o valor para análise posterior de tipo
+            p[0] = p[1]
         elif isinstance(p.slice[1].value, str) and p.slice[1].type == "STRING_LITERAL":
-            # String literal
-            emit(f'PUSHS "{p[1]}"')
-            p[0] = p[1]  # Valor da string para análise posterior de tipo
+            p[0] = p[1]
         elif p.slice[1].type == "TRUE":
-            emit("PUSHI 1")
-            p[0] = 1  # Valor booleano true
+            p[0] = 1
         elif p.slice[1].type == "FALSE":
-            emit("PUSHI 0")
-            p[0] = 0  # Valor booleano false
+            p[0] = 0
         elif isinstance(p[1], tuple) and p[1][0] == 'array_element':
-            # Elemento de array - endereço já está na pilha
-            emit("LOADN")
-            p[0] = p[1]  # Passar referência para análise posterior
+            p[0] = p[1]
         elif isinstance(p[1], str):
-            # Variável simples
-            if p[1] not in symbol_table:
-                raise SyntaxError(f"Variável '{p[1]}' não declarada")
-            var_info = symbol_table[p[1]]
-            var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
-            emit(f"PUSHG {var_addr}")
-            p[0] = p[1]  # Passa o nome da variável para análise posterior
+            p[0] = p[1]
     elif len(p) == 4:
-        # Expressão entre parênteses - já processada em p[2]
         p[0] = p[2]
 
 # Regras auxiliares

@@ -1,4 +1,3 @@
 No parser:
 - tratar de functions
-- corrigir if
 - corrigir for

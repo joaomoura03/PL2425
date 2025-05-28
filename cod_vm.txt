@@ -1,5 +1,5 @@
 PUSHN 1
-PUSHS "Insere um número: "
+PUSHS "Digite sua nota (0-100):"
 WRITES
 WRITELN
 READ
@@ -7,15 +7,48 @@ ATOI
 STOREG 0
 PUSHG 0
 PUSHI 0
-SUP
-PUSHS "O número é positivo"
-WRITES
-WRITELN
-PUSHS "O número é zero ou negativo"
-WRITES
-WRITELN
+SUPEQ
 JZ else0
+PUSHG 0
+PUSHI 90
+SUPEQ
+JZ else2
+PUSHS "Excelente!"
+WRITES
+WRITELN
+JUMP endif3
+else2:
+PUSHG 0
+PUSHI 70
+SUPEQ
+JZ else4
+PUSHS "Bom"
+WRITES
+WRITELN
+JUMP endif5
+else4:
+PUSHG 0
+PUSHI 50
+SUPEQ
+JZ else6
+PUSHS "Suficiente"
+WRITES
+WRITELN
+JUMP endif7
+else6:
+PUSHS "Insuficiente"
+WRITES
+WRITELN
+endif7:
+endif5:
+endif3:
 JUMP endif1
 else0:
+PUSHS "Nota inválida"
+WRITES
+WRITELN
 endif1:
+PUSHS "Fim do programa"
+WRITES
+WRITELN
 STOP
