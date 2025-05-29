@@ -15,3 +15,6 @@ adicionei a função get_expresison_type para saber qual é o tipo que estamos a
 
 6- problema nos loops nao estava a lerv bem a condição
 alterar a condição para que quando seja <= dê INFEQ
+
+7-problema no downto
+acrescesto no process_statment o downto

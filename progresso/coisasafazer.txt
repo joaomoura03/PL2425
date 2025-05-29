@@ -1,3 +1,2 @@
 No parser:
-- tratar de functions
-- corrigir for
+- tratar de functions e procedures
