@@ -1,0 +1,12 @@
+program ContaRegressiva;
+var
+    i: integer;
+begin
+    writeln('=== CONTAGEM REGRESSIVA ===');
+    writeln('Contando de 10 até 1:');
+    for i := 10 downto 1 do
+    begin
+        writeln(i);
+    end;
+    writeln('FIM!');
+end.

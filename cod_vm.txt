@@ -1,5 +1,22 @@
 PUSHN 1
-PUSHS "Digite sua nota (0-100):"
+PUSHN 1
+PUSHS "=== SOMA DE NÚMEROS ==="
+WRITES
+WRITELN
+PUSHS "Digite números para somar (0 para parar):"
+WRITES
+WRITELN
+PUSHI 0
+STOREG 1
+PUSHI 1
+STOREG 0
+while0:
+PUSHG 0
+PUSHI 0
+EQUAL
+NOT
+JZ endwhile1
+PUSHS "Digite um número: "
 WRITES
 WRITELN
 READ
@@ -7,48 +24,19 @@ ATOI
 STOREG 0
 PUSHG 0
 PUSHI 0
-SUPEQ
-JZ else0
+EQUAL
+NOT
+JZ endif2
+PUSHG 1
 PUSHG 0
-PUSHI 90
-SUPEQ
-JZ else2
-PUSHS "Excelente!"
+ADD
+STOREG 1
+endif2:
+JUMP while0
+endwhile1:
+PUSHS "Soma total: "
 WRITES
-WRITELN
-JUMP endif3
-else2:
-PUSHG 0
-PUSHI 70
-SUPEQ
-JZ else4
-PUSHS "Bom"
-WRITES
-WRITELN
-JUMP endif5
-else4:
-PUSHG 0
-PUSHI 50
-SUPEQ
-JZ else6
-PUSHS "Suficiente"
-WRITES
-WRITELN
-JUMP endif7
-else6:
-PUSHS "Insuficiente"
-WRITES
-WRITELN
-endif7:
-endif5:
-endif3:
-JUMP endif1
-else0:
-PUSHS "Nota inválida"
-WRITES
-WRITELN
-endif1:
-PUSHS "Fim do programa"
-WRITES
+PUSHG 1
+WRITEI
 WRITELN
 STOP

@@ -1,0 +1,21 @@
+program SomaNumeros;
+var
+  numero, soma: integer;
+begin
+  writeln('=== SOMA DE NÚMEROS ===');
+  writeln('Digite números para somar (0 para parar):');
+  
+  soma := 0;
+  numero := 1; { Valor inicial diferente de 0 }
+  
+  while numero <> 0 do
+  begin
+    write('Digite um número: ');
+    readln(numero);
+    
+    if numero <> 0 then
+      soma := soma + numero;
+  end;
+
+  writeln('Soma total: ', soma);
+end.

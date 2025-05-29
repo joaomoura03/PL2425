@@ -261,48 +261,58 @@ def process_statement(stmt):
             start_expr = stmt[2]
             end_expr = stmt[3]
             body = stmt[4]
-            
+            direction = stmt[5] if len(stmt) > 5 else 'to'  # padrão é 'to'
+        
             if loop_var not in symbol_table:
                 raise SyntaxError(f"Variável '{loop_var}' não declarada")
-            
+        
             var_info = symbol_table[loop_var]
             var_addr = var_info['address'] if isinstance(var_info, dict) else var_info
-            
+        
             # Gerar rótulos
             start_label = new_label("for")
             end_label = new_label("endfor")
-            
+        
             # Processar valor inicial e armazenar na variável de controle
             process_expression(start_expr)
             emit(f"STOREG {var_addr}")
-            
+        
             # Processar valor final e armazenar em endereço temporário
             global next_address
             limit_addr = next_address
             next_address += 1
             emit("PUSHN 1")  # Reservar espaço para o limite
-            
+        
             process_expression(end_expr)
             emit(f"STOREG {limit_addr}")
-            
+        
             # Início do loop
             emit(f"{start_label}:")
-            
-            # Verificar condição: loop_var <= limit (continuar se verdadeiro)
+        
+            # Verificar condição baseada na direção
             emit(f"PUSHG {var_addr}")    # valor da variável de controle
             emit(f"PUSHG {limit_addr}")  # valor limite
-            emit("INFEQ")                # loop_var <= limit?
-            emit(f"JZ {end_label}")      # se loop_var > limit (resultado falso), sair do loop
-            
+        
+            if direction == 'to':
+                emit("INFEQ")                # loop_var <= limit?
+                emit(f"JZ {end_label}")      # se loop_var > limit, sair
+            else:  # downto
+                emit("SUPEQ")                # loop_var >= limit?
+                emit(f"JZ {end_label}")      # se loop_var < limit, sair
+        
             # Executar corpo do loop
             process_statement(body)
-            
-            # Incrementar variável de controle
+        
+            # Incrementar ou decrementar variável de controle
             emit(f"PUSHG {var_addr}")
-            emit("PUSHI 1")
-            emit("ADD")
+            if direction == 'to':
+                emit("PUSHI 1")
+                emit("ADD")
+            else:  # downto
+                emit("PUSHI 1")
+                emit("SUB")
             emit(f"STOREG {var_addr}")
-            
+        
             # Voltar ao início
             emit(f"JUMP {start_label}")
             emit(f"{end_label}:")
@@ -478,8 +488,12 @@ def p_while_statement(p):
 
 # Comando for - SEM gerar código aqui
 def p_for_statement(p):
-    """for_statement : FOR ID ASSIGN expression TO expression DO statement"""
-    p[0] = ('for', p[2], p[4], p[6], p[8])
+    """for_statement : FOR ID ASSIGN expression TO expression DO statement
+                     | FOR ID ASSIGN expression DOWNTO expression DO statement"""
+    if p[5] == 'to':
+        p[0] = ('for', p[2], p[4], p[6], p[8], 'to')
+    else:  # downto
+        p[0] = ('for', p[2], p[4], p[6], p[8], 'downto')
 
 # Expressões - SEM gerar código aqui
 def p_expression(p):
