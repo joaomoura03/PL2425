@@ -1,12 +1,13 @@
 program TestaSomar;
 
-function Somar(A, B: Integer): Integer;
+var
+    X, Y: integer;
+    
+function Somar(A, B: integer): integer;
 begin
     Somar := A + B;
 end;
 
-var
-  X, Y: Integer;
 
 begin
   writeln('Digite dois números inteiros:');

@@ -11,6 +11,9 @@ symbol_table = {}
 next_address = 0  # Próximo endereço disponível na memória
 label_counter = 0  # Contador para gerar rótulos únicos
 
+# Tabela de procedimentos para armazenar informações sobre procedures
+procedure_table = {}
+
 # Função para adicionar instruções ao código VM
 def emit(instruction):
     vm_code.append(instruction)
@@ -218,6 +221,18 @@ def process_statement(stmt):
                 
                 emit(f"STOREG {var_addr}")
                 
+        elif stmt[0] == 'procedure_call':
+            proc_name = stmt[1]
+            if proc_name not in procedure_table:
+                raise SyntaxError(f"Procedimento '{proc_name}' não declarado")
+            
+            proc_info = procedure_table[proc_name]
+            proc_label = proc_info['label']
+            
+            # Gerar chamada para o procedimento
+            emit(f"PUSHA {proc_label}")
+            emit("CALL")
+                
         elif stmt[0] == 'if':
             condition = stmt[1]
             then_stmt = stmt[2]
@@ -332,13 +347,52 @@ def p_program(p):
 
 # Bloco principal - CORRIGIDO para processar na ordem certa
 def p_block(p):
-    """block : declarations BEGIN statements END"""
-    p[0] = ('block', p[3])
-    # Processar as declarações já foi feito durante a análise
-    # Agora processar os statements na ordem correta
-    for stmt in p[3]:
+    """block : declarations procedures BEGIN statements END"""
+    p[0] = ('block', p[4])
+    # As declarações de variáveis já foram processadas durante a análise
+    # Os procedimentos já foram processados e registrados durante a análise
+    # Agora processar apenas os statements principais
+    for stmt in p[4]:
         process_statement(stmt)
     emit("STOP")
+
+# Declarações de procedimentos
+def p_procedures(p):
+    """procedures : procedure_declaration procedures
+                  | empty"""
+    if len(p) == 3:
+        p[0] = [p[1]] + p[2]
+    else:
+        p[0] = []
+
+def p_procedure_declaration(p):
+    """procedure_declaration : PROCEDURE ID SEMICOLON procedure_block SEMICOLON"""
+    proc_name = p[2]
+    proc_label = new_label(f"proc{proc_name}")
+    
+    # Adicionar procedimento à tabela de procedimentos
+    procedure_table[proc_name] = {
+        'label': proc_label,
+        'body': p[4]
+    }
+    
+    # Gerar um JUMP para pular o código do procedimento durante a execução principal
+    jump_label = new_label("skipproc")
+    emit(f"JUMP {jump_label}")
+    
+    # Gerar o rótulo e o código do procedimento
+    emit(f"{proc_label}:")
+    process_statement(p[4])
+    emit("RETURN")
+    
+    # Rótulo para continuar após o procedimento
+    emit(f"{jump_label}:")
+    
+    p[0] = ('procedure', proc_name, p[4])
+
+def p_procedure_block(p):
+    """procedure_block : declarations BEGIN statements END"""
+    p[0] = ('compound', p[3])
 
 # Declarações de variáveis
 def p_declarations(p):
@@ -423,8 +477,16 @@ def p_statement(p):
                  | while_statement
                  | for_statement
                  | compound_statement
+                 | procedure_call
                  | empty"""
     p[0] = p[1]
+
+# Chamada de procedimento como statement separado
+def p_procedure_call(p):
+    """procedure_call : ID"""
+    # Durante o parsing, assumir que é uma chamada de procedimento
+    # A verificação será feita durante o processamento
+    p[0] = ('procedure_call', p[1])
 
 # Bloco de código composto (begin/end)
 def p_compound_statement(p):

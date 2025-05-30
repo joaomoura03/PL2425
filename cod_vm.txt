@@ -1,30 +1,132 @@
 PUSHN 1
-PUSHS "=== CONTAGEM REGRESSIVA ==="
-WRITES
-WRITELN
-PUSHS "Contando de 10 até 1:"
-WRITES
-WRITELN
-PUSHI 10
-STOREG 0
 PUSHN 1
-PUSHI 1
+PUSHN 1
+PUSHN 1
+JUMP skipproc1
+procLerNumeros0:
+PUSHS "Digite o primeiro número:"
+WRITES
+WRITELN
+READ
+ATOI
+STOREG 0
+PUSHS "Digite o segundo número:"
+WRITES
+WRITELN
+READ
+ATOI
 STOREG 1
-for0:
+RETURN
+skipproc1:
+JUMP skipproc3
+procSomar2:
 PUSHG 0
 PUSHG 1
-SUPEQ
-JZ endfor1
-PUSHG 0
+ADD
+STOREG 2
+PUSHS "Resultado da soma: "
+WRITES
+PUSHG 2
 WRITEI
 WRITELN
+RETURN
+skipproc3:
+JUMP skipproc5
+procSubtrair4:
 PUSHG 0
-PUSHI 1
+PUSHG 1
 SUB
-STOREG 0
-JUMP for0
-endfor1:
-PUSHS "FIM!"
+STOREG 2
+PUSHS "Resultado da subtração: "
+WRITES
+PUSHG 2
+WRITEI
+WRITELN
+RETURN
+skipproc5:
+JUMP skipproc7
+procMultiplicar6:
+PUSHG 0
+PUSHG 1
+MUL
+STOREG 2
+PUSHS "Resultado da multiplicação: "
+WRITES
+PUSHG 2
+WRITEI
+WRITELN
+RETURN
+skipproc7:
+JUMP skipproc9
+procMostrarMenu8:
+PUSHS "=== CALCULADORA SIMPLES ==="
+WRITES
+WRITELN
+PUSHS "1 - Somar"
+WRITES
+WRITELN
+PUSHS "2 - Subtrair"
+WRITES
+WRITELN
+PUSHS "3 - Multiplicar"
+WRITES
+WRITELN
+PUSHS "Escolha uma opção (1-3):"
+WRITES
+WRITELN
+RETURN
+skipproc9:
+JUMP skipproc11
+procImprimirLinha10:
+PUSHS "============================="
+WRITES
+WRITELN
+RETURN
+skipproc11:
+PUSHA procImprimirLinha10
+CALL
+PUSHA procMostrarMenu8
+CALL
+PUSHA procImprimirLinha10
+CALL
+READ
+ATOI
+STOREG 3
+PUSHA procLerNumeros0
+CALL
+PUSHG 3
+PUSHI 1
+EQUAL
+JZ else12
+PUSHA procSomar2
+CALL
+JUMP endif13
+else12:
+PUSHG 3
+PUSHI 2
+EQUAL
+JZ else14
+PUSHA procSubtrair4
+CALL
+JUMP endif15
+else14:
+PUSHG 3
+PUSHI 3
+EQUAL
+JZ else16
+PUSHA procMultiplicar6
+CALL
+JUMP endif17
+else16:
+PUSHS "Opção inválida!"
+WRITES
+WRITELN
+endif17:
+endif15:
+endif13:
+PUSHA procImprimirLinha10
+CALL
+PUSHS "Obrigado por usar a calculadora!"
 WRITES
 WRITELN
 STOP

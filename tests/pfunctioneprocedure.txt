@@ -1,0 +1,34 @@
+program ExemploSimples;
+var
+    numero, dobro: integer;
+
+function Dobrar(x: integer): integer;
+begin
+    Dobrar := x * 2;
+end;
+
+procedure MostrarResultado(valor: integer);
+begin
+    writeln('O dobro é: ', valor);
+end;
+
+procedure ImprimirLinha;
+begin
+    writeln('==================');
+end;
+
+begin
+    ImprimirLinha;
+    writeln('Calculadora do Dobro');
+    ImprimirLinha;
+    
+    writeln('Digite um número:');
+    readln(numero);
+    
+    dobro := Dobrar(numero);
+    
+    MostrarResultado(dobro);
+    
+    ImprimirLinha;
+    writeln('Programa terminado');
+end.

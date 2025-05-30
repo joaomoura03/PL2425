@@ -1,0 +1,66 @@
+program CalculadoraSimples;
+var
+    num1, num2, resultado: integer;
+    operacao: integer;
+
+procedure LerNumeros;
+begin
+    writeln('Digite o primeiro número:');
+    readln(num1);
+    writeln('Digite o segundo número:');
+    readln(num2);
+end;
+
+procedure Somar;
+begin
+    resultado := num1 + num2;
+    writeln('Resultado da soma: ', resultado);
+end;
+
+procedure Subtrair;
+begin
+    resultado := num1 - num2;
+    writeln('Resultado da subtração: ', resultado);
+end;
+
+procedure Multiplicar;
+begin
+    resultado := num1 * num2;
+    writeln('Resultado da multiplicação: ', resultado);
+end;
+
+procedure MostrarMenu;
+begin
+    writeln('=== CALCULADORA SIMPLES ===');
+    writeln('1 - Somar');
+    writeln('2 - Subtrair');
+    writeln('3 - Multiplicar');
+    writeln('Escolha uma opção (1-3):');
+end;
+
+procedure ImprimirLinha;
+begin
+    writeln('=============================');
+end;
+
+begin
+    ImprimirLinha;
+    MostrarMenu;
+    ImprimirLinha;
+    
+    readln(operacao);
+    
+    LerNumeros;
+    
+    if operacao = 1 then
+        Somar
+    else if operacao = 2 then
+        Subtrair
+    else if operacao = 3 then
+        Multiplicar
+    else
+        writeln('Opção inválida!');
+    
+    ImprimirLinha;
+    writeln('Obrigado por usar a calculadora!');
+end.

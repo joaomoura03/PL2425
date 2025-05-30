@@ -1,6 +1,6 @@
 program TestaEhPar;
 
-function EhPar(N: Integer): Boolean;
+function EhPar(N: integer): boolean;
 begin
     EhPar := (N mod 2) = 0;
 end;
