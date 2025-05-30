@@ -3,7 +3,7 @@ import sys
 
 from lexer import tokens
 
-# Lista para armazenar o código VM gerado
+# código VM
 vm_code = []
 
 # Tabela de símbolos para mapear variáveis para endereços
@@ -25,6 +25,7 @@ def new_label(prefix):
     label_counter += 1
     return label
 
+
 # Função para determinar o tipo de uma expressão
 def get_expression_type(expr):
     if isinstance(expr, int):
@@ -36,7 +37,7 @@ def get_expression_type(expr):
             if isinstance(symbol_table[expr], dict):
                 return symbol_table[expr]['type']
             else:
-                return 'integer'  # Assumindo inteiro por padrão
+                return 'integer'
         else:
             return 'string'
     elif isinstance(expr, tuple):
@@ -46,15 +47,14 @@ def get_expression_type(expr):
                 return symbol_table[var_name]['element_type']
         elif expr[0] == 'binop':
             op = expr[1]
-            # Operadores que produzem valores lógicos (boolean)
             if op in ['=', '<>', '<', '<=', '>', '>=', 'and', 'or']:
                 return 'boolean'
-            # Operadores aritméticos para valores reais
             elif op in ['/', '*', '+', '-'] and (get_expression_type(expr[2]) == 'real' or get_expression_type(expr[3]) == 'real'):
                 return 'real'
             else:
-                return get_expression_type(expr[2])  # Assumir tipo do primeiro operando para outros operadores
+                return get_expression_type(expr[2])
     return 'unknown'
+
 
 # Função para processar expressões e gerar código na ordem correta
 def process_expression(expr):
@@ -131,6 +131,7 @@ def process_expression(expr):
                 emit("AND")
             elif op == 'or':
                 emit("OR")
+
 
 # Função para processar statements na ordem correta
 def process_statement(stmt):
@@ -309,11 +310,11 @@ def process_statement(stmt):
             emit(f"PUSHG {limit_addr}")  # valor limite
         
             if direction == 'to':
-                emit("INFEQ")                # loop_var <= limit?
-                emit(f"JZ {end_label}")      # se loop_var > limit, sair
+                emit("INFEQ")
+                emit(f"JZ {end_label}")
             else:  # downto
-                emit("SUPEQ")                # loop_var >= limit?
-                emit(f"JZ {end_label}")      # se loop_var < limit, sair
+                emit("SUPEQ")
+                emit(f"JZ {end_label}")
         
             # Executar corpo do loop
             process_statement(body)
@@ -323,12 +324,11 @@ def process_statement(stmt):
             if direction == 'to':
                 emit("PUSHI 1")
                 emit("ADD")
-            else:  # downto
+            else:
                 emit("PUSHI 1")
                 emit("SUB")
             emit(f"STOREG {var_addr}")
         
-            # Voltar ao início
             emit(f"JUMP {start_label}")
             emit(f"{end_label}:")
             
@@ -340,12 +340,14 @@ def process_statement(stmt):
         for s in stmt:
             process_statement(s)
 
+
 # Programa principal
 def p_program(p):
     """program : PROGRAM ID SEMICOLON block DOT"""
     p[0] = ('program', p[2], p[4])
 
-# Bloco principal - CORRIGIDO para processar na ordem certa
+
+# Bloco principal
 def p_block(p):
     """block : declarations procedures BEGIN statements END"""
     p[0] = ('block', p[4])
@@ -356,6 +358,7 @@ def p_block(p):
         process_statement(stmt)
     emit("STOP")
 
+
 # Declarações de procedimentos
 def p_procedures(p):
     """procedures : procedure_declaration procedures
@@ -364,6 +367,7 @@ def p_procedures(p):
         p[0] = [p[1]] + p[2]
     else:
         p[0] = []
+
 
 def p_procedure_declaration(p):
     """procedure_declaration : PROCEDURE ID SEMICOLON procedure_block SEMICOLON"""
@@ -390,15 +394,18 @@ def p_procedure_declaration(p):
     
     p[0] = ('procedure', proc_name, p[4])
 
+
 def p_procedure_block(p):
     """procedure_block : declarations BEGIN statements END"""
     p[0] = ('compound', p[3])
+
 
 # Declarações de variáveis
 def p_declarations(p):
     """declarations : VAR var_declaration_list
                     | empty"""
     p[0] = p[2] if len(p) == 3 else []
+
 
 def p_var_declaration_list(p):
     """var_declaration_list : var_declaration SEMICOLON var_declaration_list
@@ -407,6 +414,7 @@ def p_var_declaration_list(p):
         p[0] = [p[1]] + p[3]
     else:
         p[0] = [p[1]]
+
 
 def p_var_declaration(p):
     """var_declaration : id_list COLON type"""
@@ -434,6 +442,7 @@ def p_var_declaration(p):
                 emit("PUSHN 1")  # Variável simples
                 next_address += 1
 
+
 def p_id_list(p):
     """id_list : ID
                | ID COMMA id_list"""
@@ -441,6 +450,7 @@ def p_id_list(p):
         p[0] = [p[1]]
     else:
         p[0] = [p[1]] + p[3]
+
 
 def p_array_type(p):
     """array_type : ARRAY LBRACKET NUMBER DOTDOT NUMBER RBRACKET OF type"""
@@ -451,6 +461,7 @@ def p_array_type(p):
         'element_type': p[8]
     }
 
+
 def p_type(p):
     """type : INTEGER
             | BOOLEAN
@@ -458,6 +469,7 @@ def p_type(p):
             | REAL
             | array_type"""
     p[0] = p[1]
+
 
 # Lista de statements
 def p_statements(p):
@@ -467,6 +479,7 @@ def p_statements(p):
         p[0] = [p[1]] + p[3]
     else:
         p[0] = [p[1]]
+
 
 # Statement individual
 def p_statement(p):
@@ -481,6 +494,7 @@ def p_statement(p):
                  | empty"""
     p[0] = p[1]
 
+
 # Chamada de procedimento como statement separado
 def p_procedure_call(p):
     """procedure_call : ID"""
@@ -488,17 +502,20 @@ def p_procedure_call(p):
     # A verificação será feita durante o processamento
     p[0] = ('procedure_call', p[1])
 
+
 # Bloco de código composto (begin/end)
 def p_compound_statement(p):
     """compound_statement : BEGIN statements END"""
     p[0] = ('compound', p[2])
 
-# Atribuição - SEM gerar código aqui
+
+# Atribuição
 def p_assignment(p):
     """assignment : variable ASSIGN expression"""
     p[0] = ('assignment', p[1], p[3])
 
-# Variável (simples ou elemento de array) - SEM gerar código aqui
+
+# Variável (simples ou elemento de array)
 def p_variable(p):
     """variable : ID
                 | ID LBRACKET expression RBRACKET"""
@@ -516,10 +533,12 @@ def p_variable(p):
         
         p[0] = ('array_element', var_name, p[3])
 
-# Comando writeln - SEM gerar código aqui
+
+# Comando writeln
 def p_writeln(p):
     """writeln : WRITELN LPAREN expression_list RPAREN"""
     p[0] = ('writeln', p[3])
+
 
 def p_expression_list(p):
     """expression_list : expression
@@ -529,12 +548,14 @@ def p_expression_list(p):
     else:
         p[0] = [p[1]] + p[3]
 
-# Comando readln - SEM gerar código aqui
+
+# Comando readln
 def p_readln(p):
     """readln : READLN LPAREN variable RPAREN"""
     p[0] = ('readln', p[3])
 
-# Comando if - SEM gerar código aqui
+
+# Comando if
 def p_if_statement(p):
     """if_statement : IF expression THEN statement
                     | IF expression THEN statement ELSE statement"""
@@ -543,21 +564,24 @@ def p_if_statement(p):
     else:
         p[0] = ('if', p[2], p[4], p[6])
 
-# Comando while - SEM gerar código aqui
+
+# Comando while
 def p_while_statement(p):
     """while_statement : WHILE expression DO statement"""
     p[0] = ('while', p[2], p[4])
 
-# Comando for - SEM gerar código aqui
+
+# Comando for
 def p_for_statement(p):
     """for_statement : FOR ID ASSIGN expression TO expression DO statement
                      | FOR ID ASSIGN expression DOWNTO expression DO statement"""
     if p[5] == 'to':
         p[0] = ('for', p[2], p[4], p[6], p[8], 'to')
-    else:  # downto
+    else:
         p[0] = ('for', p[2], p[4], p[6], p[8], 'downto')
 
-# Expressões - SEM gerar código aqui
+
+# Expressões
 def p_expression(p):
     """expression : simple_expression
                   | simple_expression EQUAL simple_expression
@@ -571,6 +595,7 @@ def p_expression(p):
     else:
         p[0] = ('binop', p[2], p[1], p[3])
 
+
 def p_simple_expression(p):
     """simple_expression : term
                          | simple_expression PLUS term
@@ -580,6 +605,7 @@ def p_simple_expression(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
+
 
 def p_term(p):
     """term : factor
@@ -592,6 +618,7 @@ def p_term(p):
         p[0] = p[1]
     else:
         p[0] = ('binop', p[2], p[1], p[3])
+
 
 def p_factor(p):
     """factor : variable
@@ -616,10 +643,12 @@ def p_factor(p):
     elif len(p) == 4:
         p[0] = p[2]
 
+
 # Regras auxiliares
 def p_empty(p):
     """empty :"""
     p[0] = None
+
 
 # Erro de sintaxe
 def p_error(p):
@@ -628,8 +657,10 @@ def p_error(p):
     else:
         print("Erro de sintaxe no final do arquivo")
 
+
 # Construir o parser
 parser = yacc.yacc()
+
 
 if __name__ == "__main__":
     ficheiro_test = sys.argv[1]

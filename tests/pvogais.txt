@@ -1,9 +1,9 @@
 program TestaContarVogais;
 
-function ContarVogais(Texto: String): Integer;
+function ContarVogais(Texto: string): integer;
 var
-    I: Integer;
-    C: Char;
+    I: integer;
+    C: char;
 begin
     ContarVogais := 0;
     for I := 1 to Length(Texto) do
@@ -15,7 +15,7 @@ begin
 end;
 
 var
-  Frase: String;
+  Frase: string;
 
 begin
   writeln('Digite um texto:');

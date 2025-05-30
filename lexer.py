@@ -4,7 +4,6 @@ import sys
 
 # Lista de tokens
 tokens = [
-    # Palavras reservadas primeiro para garantir precedência
     'PROGRAM',
     'VAR',
     'BEGIN',
@@ -33,7 +32,6 @@ tokens = [
     'MOD',
     'ARRAY',
     'OF',
-    # Outros tokens
     'ID',
     'NUMBER',
     'STRING_LITERAL',
@@ -59,7 +57,7 @@ tokens = [
     'DOTDOT'
 ]
 
-# Expressões regulares para palavras reservadas (com precedência sobre ID)
+
 def t_PROGRAM(t):
     r'program'
     return t
@@ -172,23 +170,23 @@ def t_OF(t):
     r'of'
     return t
 
-# Regra para identificadores - deve ter precedência menor que as palavras reservadas
+
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     return t
 
-# Regras para outros tokens
+
 def t_NUMBER(t):
     r'\d+'
-    t.value = int(t.value)  # Converte para inteiro
+    t.value = int(t.value)
     return t
 
 def t_STRING_LITERAL(t):
     r'\'([^\\\']|\\.)*\''
-    t.value = t.value[1:-1]  # Remove as aspas simples
+    t.value = t.value[1:-1]
     return t
 
-# Tokens simples
+
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
@@ -210,25 +208,25 @@ t_COMMA = r','
 t_DOT = r'\.'
 t_DOTDOT = r'\.\.'
 
-# Ignorar espaços e tabulações
+
 t_ignore = ' \t\n'
 
-# Ignorar comentários de uma linha e multilinhas
+
 def t_COMMENT(t):
     r'\{[^}]*\}|\(\*[^*]*\*\)'
     pass
 
-# Contar linhas
+
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
-# Erro
+
 def t_error(t):
     print(f"Caractere ilegal '{t.value[0]}', linha {t.lineno}")
     t.lexer.skip(1)
 
-# Construir o lexer
+
 lexer = lex.lex(reflags=re.IGNORECASE)
 
 if __name__ == "__main__":

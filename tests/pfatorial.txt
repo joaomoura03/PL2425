@@ -1,8 +1,8 @@
 program TestaFatorial;
 
-function Fatorial(N: Integer): LongInt;
+function Fatorial(N: integer): LongInt;
 var
-    I: Integer;
+    I: integer;
 begin
     Fatorial := 1;
     for I := 2 to N do
@@ -10,7 +10,7 @@ begin
 end;
 
 var
-  num: Integer;
+  num: integer;
 
 begin
   writeln('Digite um número inteiro positivo:');
