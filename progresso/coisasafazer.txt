@@ -1,2 +1,0 @@
-No parser:
-- tratar de functions e procedures

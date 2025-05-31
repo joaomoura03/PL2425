@@ -351,9 +351,6 @@ def p_program(p):
 def p_block(p):
     """block : declarations procedures BEGIN statements END"""
     p[0] = ('block', p[4])
-    # As declarações de variáveis já foram processadas durante a análise
-    # Os procedimentos já foram processados e registrados durante a análise
-    # Agora processar apenas os statements principais
     for stmt in p[4]:
         process_statement(stmt)
     emit("STOP")
@@ -432,14 +429,14 @@ def p_var_declaration(p):
                     'upper': p[3]['upper'],
                     'element_type': p[3]['element_type']
                 }
-                emit(f"PUSHN {size}")  # Reserva espaço para o array
+                emit(f"PUSHN {size}")
                 next_address += size
             else:
                 symbol_table[var] = {
                     'address': next_address,
-                    'type': p[3]  # Armazenar o tipo da variável
+                    'type': p[3]
                 }
-                emit("PUSHN 1")  # Variável simples
+                emit("PUSHN 1")
                 next_address += 1
 
 
